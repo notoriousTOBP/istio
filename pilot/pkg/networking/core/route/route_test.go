@@ -2963,3 +2963,56 @@ func TestSortVHostRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestGetConsistentHashForVirtualService(t *testing.T) {
+	cases := []struct {
+		name string
+		vs   *config.Config
+	}{
+		{
+			name: "null-route",
+			vs: &config.Config{
+				Meta: config.Meta{
+					GroupVersionKind: gvk.VirtualService,
+					Name:             "acme",
+				},
+				Spec: &networking.VirtualService{
+					Hosts:    []string{},
+					Gateways: []string{"some-gateway"},
+					Http: []*networking.HTTPRoute{
+						{
+							Route: []*networking.HTTPRouteDestination{
+								{
+									Destination: &networking.Destination{
+										Host: "*.example.org",
+										Port: &networking.PortSelector{
+											Number: 8484,
+										},
+									},
+									Weight: 100,
+								},
+								nil,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	cg := core.NewConfigGenTest(t, core.TestOptions{})
+	proxy := cg.SetupProxy(&model.Proxy{
+		Type:        model.SidecarProxy,
+		IPAddresses: []string{"1.1.1.1"},
+		ID:          "someID",
+		DNSDomain:   "foo.com",
+		IstioVersion: &model.IstioVersion{
+			Major: 1,
+			Minor: 20,
+		},
+	})
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_ = route.GetConsistentHashForVirtualService(cg.PushContext(), proxy, *c.vs)
+		})
+	}
+}

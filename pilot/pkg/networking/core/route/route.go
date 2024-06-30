@@ -1497,7 +1497,7 @@ func GetConsistentHashForVirtualService(push *model.PushContext, node *model.Pro
 func hashForHTTPDestination(push *model.PushContext, node *model.Proxy,
 	dst *networking.HTTPRouteDestination,
 ) (*networking.LoadBalancerSettings_ConsistentHashLB, *model.ConsolidatedDestRule) {
-	if push == nil {
+	if push == nil || dst == nil {
 		return nil, nil
 	}
 
